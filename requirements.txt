@@ -2,3 +2,5 @@ pandas
 pandera>=0.24
 scikit-learn
 joblib
+fastapi
+uvicorn[standard]
