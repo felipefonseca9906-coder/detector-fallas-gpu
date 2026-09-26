@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import Any
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.features import extraer_features
 
@@ -15,8 +14,20 @@ modelo = joblib.load(RUTA_MODELO)
 app = FastAPI(title="Detector de fallas de GPU")
 
 
+class LecturaTelemetria(BaseModel):
+	model_config = ConfigDict(strict=True, extra="forbid", allow_inf_nan=False)
+
+	temp_c: float
+	power_w: float
+	util_pct: float
+	clock_mhz: float
+	ecc_errors: int
+
+
 class SolicitudPrediccion(BaseModel):
-	lecturas: list[dict[str, Any]]
+	model_config = ConfigDict(strict=True, extra="forbid")
+
+	lecturas: list[LecturaTelemetria] = Field(min_length=10)
 
 
 class RespuestaPrediccion(BaseModel):
@@ -27,7 +38,7 @@ class RespuestaPrediccion(BaseModel):
 @app.post("/predecir", response_model=RespuestaPrediccion)
 def predecir(solicitud: SolicitudPrediccion) -> RespuestaPrediccion:
 	"""Calcula las features de una ventana y devuelve el estado predicho con su confianza."""
-	ventana = pd.DataFrame(solicitud.lecturas)
+	ventana = pd.DataFrame([lectura.model_dump() for lectura in solicitud.lecturas])
 	features = pd.DataFrame([extraer_features(ventana)])
 	probabilidades = modelo.predict_proba(features)[0]
 	indice_predicho = probabilidades.argmax()
