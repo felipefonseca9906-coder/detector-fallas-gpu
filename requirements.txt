@@ -1,6 +1,7 @@
-pandas
-pandera>=0.24
-scikit-learn
-joblib
-fastapi
-uvicorn[standard]
+numpy==2.5.3
+pandas==3.0.6
+pandera==0.33.1
+scikit-learn==1.9.1
+joblib==1.6.0
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
