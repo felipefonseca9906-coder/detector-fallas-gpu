@@ -5,16 +5,21 @@ Servicio de machine learning que clasifica ventanas de telemetría de GPU en uno
 ## Estructura del proyecto
 
 ```text
-data/telemetria_publica.csv  Dataset de entrenamiento
-models/modelo.joblib        Pipeline entrenado y serializado
-src/features.py             Ventanas y cálculo de features
-src/schema.py               Contrato de validación con Pandera
-src/train.py                Entrenamiento y serialización
-src/api.py                  API FastAPI
-Dockerfile                  Imagen de producción
-.dockerignore               Archivos excluidos del contexto Docker
-requirements.txt            Dependencias con versiones fijadas
+detector-fallas-gpu/
+|- src/
+|  |- features.py      # cálculo de features
+|  |- schema.py        # contrato de datos con Pandera
+|  |- train.py         # entrenamiento y serialización
+|  |- api.py           # API de FastAPI
+|- models/
+|  |- modelo.joblib    # modelo serializado
+|- Dockerfile          # configuración de la imagen Docker
+|- .dockerignore       # archivos excluidos de Docker
+|- requirements.txt    # dependencias del proyecto
+|- README.md           # instrucciones del proyecto
 ```
+
+El dataset de trabajo se encuentra en `data/telemetria_publica.csv`.
 
 ## Flujo del modelo
 
