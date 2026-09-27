@@ -1,5 +1,4 @@
 # Parcial — Detector de fallas de GPU: del dato al contenedor
-
 ## El contexto
 
 Trabajas en el equipo de infraestructura de un centro de datos que entrena modelos de IA

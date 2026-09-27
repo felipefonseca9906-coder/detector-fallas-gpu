@@ -18,17 +18,21 @@ RUTA_MODELO = DIRECTORIO_PROYECTO / "models" / "modelo.joblib"
 def construir_dataset_valido(
 	telemetria: pd.DataFrame, tamano_ventana: int = 30
 ) -> tuple[pd.DataFrame, pd.Series, int]:
-	"""Extrae X e y de ventanas válidas y cuenta las ventanas rechazadas por el contrato."""
+	"""Extrae X e y conservando ventanas y quitando solo lecturas que fallan el contrato."""
 	filas_features = []
 	etiquetas = []
-	ventanas_rechazadas = 0
+	lecturas_rechazadas = 0
 
 	for ventana in generar_ventanas(telemetria, tamano_ventana):
 		try:
-			validar_telemetria(ventana)
-		except pa.errors.SchemaErrors:
-			ventanas_rechazadas += 1
-			continue
+			ventana = validar_telemetria(ventana)
+		except pa.errors.SchemaErrors as error:
+			indices_invalidos = error.failure_cases["index"].dropna().unique()
+			lecturas_rechazadas += len(indices_invalidos)
+			ventana = ventana.drop(index=indices_invalidos)
+			if ventana.empty:
+				continue
+			ventana = validar_telemetria(ventana)
 
 		estados = ventana["estado"].dropna().unique()
 		if len(estados) != 1:
@@ -43,16 +47,16 @@ def construir_dataset_valido(
 	return (
 		pd.DataFrame(filas_features),
 		pd.Series(etiquetas, name="estado"),
-		ventanas_rechazadas,
+		lecturas_rechazadas,
 	)
 
 
 def entrenar_modelo(
 	ruta_datos: Path = RUTA_DATOS, ruta_modelo: Path = RUTA_MODELO
 ) -> tuple[Pipeline, int]:
-	"""Entrena y serializa el pipeline usando únicamente ventanas que pasan el contrato."""
+	"""Entrena y serializa el pipeline después de limpiar lecturas inválidas por ventana."""
 	telemetria = pd.read_csv(ruta_datos)
-	X, y, ventanas_rechazadas = construir_dataset_valido(telemetria)
+	X, y, lecturas_rechazadas = construir_dataset_valido(telemetria)
 	modelo = Pipeline(
 		[
 			(
@@ -70,9 +74,9 @@ def entrenar_modelo(
 
 	ruta_modelo.parent.mkdir(parents=True, exist_ok=True)
 	joblib.dump(modelo, ruta_modelo)
-	return modelo, ventanas_rechazadas
+	return modelo, lecturas_rechazadas
 
 
 if __name__ == "__main__":
-	_, ventanas_rechazadas = entrenar_modelo()
-	print(f"Modelo guardado en {RUTA_MODELO}; ventanas rechazadas: {ventanas_rechazadas}")
+	_, lecturas_rechazadas = entrenar_modelo()
+	print(f"Modelo guardado en {RUTA_MODELO}; lecturas rechazadas: {lecturas_rechazadas}")
