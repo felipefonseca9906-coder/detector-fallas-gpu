@@ -17,11 +17,11 @@ app = FastAPI(title="Detector de fallas de GPU")
 class LecturaTelemetria(BaseModel):
 	model_config = ConfigDict(strict=True, extra="forbid", allow_inf_nan=False)
 
-	temp_c: float
-	power_w: float
-	util_pct: float
-	clock_mhz: float
-	ecc_errors: int
+	temp_c: float = Field(ge=0, le=120)
+	power_w: float = Field(gt=0)
+	util_pct: float = Field(ge=0, le=100)
+	clock_mhz: float = Field(gt=0)
+	ecc_errors: int = Field(ge=0)
 
 
 class SolicitudPrediccion(BaseModel):
