@@ -51,7 +51,19 @@ Para detener el servidor local, presiona `Ctrl+C` en la terminal.
 
 ## API de predicción
 
-`POST /predecir` recibe una lista de al menos 10 lecturas. Cada lectura debe incluir los cinco campos numéricos indicados. Los campos extra, faltantes o con tipos incorrectos, y las ventanas cortas reciben una respuesta `422` sin ejecutar el modelo.
+`POST /predecir` recibe un objeto JSON con la propiedad `lecturas`, que contiene una lista de al menos 10 lecturas. Cada lectura debe incluir exactamente estos campos:
+
+| Campo | Tipo esperado | Validación |
+| --- | --- | --- |
+| `temp_c` | Número decimal | Entre 0 y 120 °C, inclusive |
+| `power_w` | Número decimal | Mayor que 0 |
+| `util_pct` | Número decimal | Entre 0 y 100 %, inclusive |
+| `clock_mhz` | Número decimal | Mayor que 0 |
+| `ecc_errors` | Entero | Mayor o igual que 0 |
+
+La validación es estricta: no se convierten automáticamente valores de tipos incompatibles. Tampoco se aceptan valores no finitos como `NaN` o infinito. No se permiten propiedades adicionales ni en el objeto de la solicitud ni en cada lectura. Para predecir no se envían `episodio_id`, `segundo` ni `estado`; esos campos se utilizan en el procesamiento del dataset de entrenamiento, no en la API.
+
+Si falta un campo, hay campos adicionales, un valor no cumple su tipo o rango, o se envían menos de 10 lecturas, la API responde con HTTP `422` y no ejecuta el modelo. No hay un máximo de lecturas configurado. Cuando la solicitud es válida, se calculan las features agregadas de todas las lecturas recibidas y se devuelve la clase con mayor probabilidad junto con su confianza.
 
 Ejemplo para PowerShell, que envía 10 lecturas:
 
@@ -79,5 +91,6 @@ Desde la carpeta raíz, construye la imagen y ejecuta el contenedor:
 docker build -t detector-gpu .
 docker run --rm -p 8000:8000 detector-gpu
 ```
+Si la imagen ya esta creada, solo hay que correrla con docker abierto 
 
 La imagen incluye el código y el modelo entrenado; no incluye el CSV ni vuelve a entrenar al iniciarse. Con el contenedor activo, la API queda disponible en http://localhost:8000 y su documentación interactiva en http://localhost:8000/docs. Detén el contenedor con `Ctrl+C`.
