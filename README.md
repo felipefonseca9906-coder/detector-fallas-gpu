@@ -21,6 +21,12 @@ detector-fallas-gpu/
 
 El dataset de trabajo se encuentra en `data/telemetria_publica.csv`.
 
+## Datos de entrenamiento
+
+El CSV contiene 14,400 registros de telemetría, organizados en 48 episodios, con una lectura por segundo. Cada registro incluye el identificador del episodio y del segundo, temperatura, potencia, utilización, frecuencia del reloj, errores ECC y la etiqueta `estado` (`normal`, `sobrecalentamiento`, `degradacion_memoria` o `falla_alimentacion`).
+
+El entrenamiento genera 480 ventanas de 30 segundos, sin mezclar episodios: 120 ventanas por cada estado. Se excluyen 3 lecturas con potencia no positiva, por lo que se utilizan 14,397 lecturas válidas; las 480 ventanas se conservan y tres quedan con 29 lecturas válidas. El modelo se entrena con estas 480 ventanas.
+
 ## Flujo del modelo
 
 El dataset contiene una lectura por segundo. El entrenamiento agrupa las lecturas por `episodio_id` y las divide en ventanas de 30 segundos, sin cruzar episodios. Cada ventana produce 22 features: media, desviación estándar, mínimo y máximo de temperatura, potencia, utilización, reloj y errores ECC; además del total de errores ECC y el rango de potencia. La etiqueta `estado` se conserva aparte como objetivo; los identificadores no se usan como features.
@@ -73,6 +79,21 @@ $lecturas = 1..10 | ForEach-Object { $lectura }
 $cuerpo = @{ lecturas = $lecturas } | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Uri http://localhost:8000/predecir -Method Post -ContentType application/json -Body $cuerpo
 ```
+lecturas de prueba para la api:
+{
+  "lecturas": [
+    {"temp_c": 72.1, "power_w": 245.0, "util_pct": 78.0, "clock_mhz": 1800.0, "ecc_errors": 0},
+    {"temp_c": 73.0, "power_w": 251.5, "util_pct": 81.0, "clock_mhz": 1820.0, "ecc_errors": 0},
+    {"temp_c": 74.2, "power_w": 258.0, "util_pct": 84.0, "clock_mhz": 1840.0, "ecc_errors": 0},
+    {"temp_c": 75.1, "power_w": 263.0, "util_pct": 86.0, "clock_mhz": 1860.0, "ecc_errors": 0},
+    {"temp_c": 76.0, "power_w": 268.5, "util_pct": 88.0, "clock_mhz": 1880.0, "ecc_errors": 0},
+    {"temp_c": 77.3, "power_w": 272.0, "util_pct": 90.0, "clock_mhz": 1900.0, "ecc_errors": 0},
+    {"temp_c": 78.0, "power_w": 276.5, "util_pct": 91.0, "clock_mhz": 1920.0, "ecc_errors": 0},
+    {"temp_c": 79.2, "power_w": 281.0, "util_pct": 93.0, "clock_mhz": 1940.0, "ecc_errors": 0},
+    {"temp_c": 80.1, "power_w": 286.0, "util_pct": 94.0, "clock_mhz": 1960.0, "ecc_errors": 0},
+    {"temp_c": 81.0, "power_w": 290.5, "util_pct": 95.0, "clock_mhz": 1980.0, "ecc_errors": 0}
+  ]
+}
 
 La respuesta incluye el estado predicho y la probabilidad asignada a la clase predicha:
 
